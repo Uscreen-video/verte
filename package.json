@@ -101,5 +101,8 @@
       "eslint --fix",
       "git add"
     ]
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
   }
 }
