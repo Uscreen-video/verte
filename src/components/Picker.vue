@@ -53,8 +53,7 @@ export default {
     currentSat: 0,
     currentColor: '',
     cursor: {},
-    preventUpdating: false,
-    preventEcho: false
+    preventUpdating: false
   }),
   watch: {
     // handles external changes.
@@ -111,10 +110,6 @@ export default {
     handleValue (color, muted = false) {
       const { width, height } = this.pickerRect;
       this.currentColor = toHsl(color);
-      // prvent upadtion picker slider for causing
-      // echo udationg to the current color value
-      this.preventEcho = true;
-
       if (this.mode === 'wheel') {
         const r = (100 - this.currentColor.lum) * (this.diameter / 200);
         const radius = this.diameter / 2;
@@ -135,10 +130,10 @@ export default {
       const normalized = {
         x: Math.min(Math.max(x - left, 0), width),
         y: Math.min(Math.max(y - top, 0), height)
-      }
+      };
 
       if (
-        this.mode === 'wheel'&&
+        this.mode === 'wheel' &&
         !this.ctx.isPointInPath(this.circle.path, normalized.x, normalized.y)
       ) {
         return;
@@ -150,11 +145,6 @@ export default {
     // select color and update it to verte component
     // this function calls when the color changed from the picker
     updateColor (muted = false) {
-      if (this.preventEcho) {
-        this.preventEcho = false;
-        return;
-      }
-
       this.currentColor = this.getCanvasColor();
       this.preventUpdating = true;
       this.$emit('change', this.currentColor);
@@ -230,7 +220,7 @@ export default {
         lum = 100 - (y * 100 / height);
         hue = this.currentHue;
       }
-    
+
       return new Colors.HslColor({
         alpha: this.alpha,
         hue: Math.round(hue),
@@ -244,9 +234,9 @@ export default {
       this.updateCursorPosition(getEventCords(event));
       const tempFunc = (evnt) => {
         window.requestAnimationFrame(() => {
-          this.updateCursorPosition(getEventCords(evnt))
+          this.updateCursorPosition(getEventCords(evnt));
         });
-      }
+      };
       const handleRelase = () => {
         document.removeEventListener('mousemove', tempFunc);
         document.removeEventListener('touchmove', tempFunc);
