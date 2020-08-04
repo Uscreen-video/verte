@@ -1,6 +1,6 @@
 {
   "name": "@uscreen-video/verte",
-  "version": "0.0.18",
+  "version": "0.0.17",
   "description": "Vue Color Picker",
   "main": "dist/verte.js",
   "style": "dist/verte.css",
