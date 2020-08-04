@@ -66,11 +66,9 @@ export default {
     },
     currentSat () {
       this.updateWheelColors();
-      this.updateColor();
     },
     currentHue () {
       this.updateSquareColors();
-      this.updateColor();
     }
   },
   methods: {
