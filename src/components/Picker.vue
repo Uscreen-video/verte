@@ -1,32 +1,32 @@
 <template lang="pug">
-.verte-picker(
-  ref="picker"
-  :class="`verte-picker--${mode}`"
-)
-  .verte-picker__origin(ref="origin")
-    canvas.verte-picker__canvas(
-      ref="canvas"
-      @mousedown="handleSelect"
-      @touchstart="handleSelect"
-    )
-    .verte-picker__cursor(
-      ref="cursor"
-      :style="`transform: translate3d(${cursor.x}px, ${cursor.y}px, 0)`"
-    )
-  slider.verte-picker__slider(
-    v-if="mode === 'square'"
-    :gradient="['#f00', '#ff0', '#0f0', '#0ff', '#00f', '#f0f', '#f00']"
-    :editable="false"
-    :max="360"
-    v-model="currentHue"
+  .verte-picker(
+    ref="picker"
+    :class="`verte-picker--${mode}`"
   )
-  slider.verte-picker__slider(
-    v-if="mode === 'wheel'"
-    :gradient="[`hsl(${currentColor.hue},0%,${currentColor.lum}%)`, `hsl(${currentColor.hue},100%,${currentColor.lum}%)`]"
-    :editable="false"
-    :max="100"
-    v-model="currentSat"
-  )
+    .verte-picker__origin(ref="origin")
+      canvas.verte-picker__canvas(
+        ref="canvas"
+        @mousedown="handleSelect"
+        @touchstart="handleSelect"
+      )
+      .verte-picker__cursor(
+        ref="cursor"
+        :style="`transform: translate3d(${cursor.x}px, ${cursor.y}px, 0)`"
+      )
+    slider.verte-picker__slider(
+      v-if="mode === 'square'"
+      :gradient="['#f00', '#ff0', '#0f0', '#0ff', '#00f', '#f0f', '#f00']"
+      :editable="false"
+      :max="360"
+      v-model="currentHue"
+    )
+    slider.verte-picker__slider(
+      v-if="mode === 'wheel'"
+      :gradient="[`hsl(${currentColor.hue},0%,${currentColor.lum}%)`, `hsl(${currentColor.hue},100%,${currentColor.lum}%)`]"
+      :editable="false"
+      :max="100"
+      v-model="currentSat"
+    )
 
 </template>
 
@@ -53,7 +53,8 @@ export default {
     currentSat: 0,
     currentColor: '',
     cursor: {},
-    preventUpdating: false
+    preventUpdating: false,
+    preventEcho: false
   }),
   watch: {
     // handles external changes.
@@ -66,9 +67,11 @@ export default {
     },
     currentSat () {
       this.updateWheelColors();
+      this.updateColor();
     },
     currentHue () {
       this.updateSquareColors();
+      this.updateColor();
     }
   },
   methods: {
@@ -108,12 +111,19 @@ export default {
     handleValue (color, muted = false) {
       const { width, height } = this.pickerRect;
       this.currentColor = toHsl(color);
+      // prevent updating picker slider for causing
+      // echo updating to the current color value
+      this.preventEcho = true;
+
       if (this.mode === 'wheel') {
         const r = (100 - this.currentColor.lum) * (this.diameter / 200);
         const radius = this.diameter / 2;
         const coords = getCartesianCoords(r, this.currentColor.hue / 360);
         this.cursor = { x: coords.x + radius, y: coords.y + radius };
         this.currentSat = this.currentColor.sat;
+        if (this.currentSat === 0) {
+          this.updateColor();
+        }
       }
 
       if (this.mode === 'square') {
@@ -121,6 +131,9 @@ export default {
         const y = ((100 - this.currentColor.lum) / 100) * height;
         this.cursor = { x, y };
         this.currentHue = this.currentColor.hue;
+        if (this.currentHue === 0) {
+          this.updateColor();
+        }
       }
     },
     updateCursorPosition ({ x, y }) {
@@ -132,7 +145,7 @@ export default {
 
       if (
         this.mode === 'wheel' &&
-        !this.ctx.isPointInPath(this.circle.path, normalized.x, normalized.y)
+          !this.ctx.isPointInPath(this.circle.path, normalized.x, normalized.y)
       ) {
         return;
       }
@@ -143,6 +156,11 @@ export default {
     // select color and update it to verte component
     // this function calls when the color changed from the picker
     updateColor (muted = false) {
+      if (this.preventEcho) {
+        this.preventEcho = false;
+        return;
+      }
+
       this.currentColor = this.getCanvasColor();
       this.preventUpdating = true;
       this.$emit('change', this.currentColor);
